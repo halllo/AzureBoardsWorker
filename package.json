@@ -1,0 +1,19 @@
+{
+  "name": "azure-boards-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "scripts/abw.sh",
+    "tick": "scripts/abw.sh --once",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "1.18.32"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

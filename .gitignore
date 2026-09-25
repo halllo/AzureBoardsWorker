@@ -427,3 +427,17 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Azure Boards Worker runtime
+.env
+state/
+logs/
+
+# opencode installs @opencode-ai/plugin into the config dir on startup
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
+
+# macOS
+.DS_Store

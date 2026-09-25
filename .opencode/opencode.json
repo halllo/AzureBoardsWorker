@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "amazon-bedrock/eu.anthropic.claude-sonnet-5",
+  "small_model": "amazon-bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "autoupdate": false,
+  "share": "disabled",
+  "provider": {
+    "amazon-bedrock": {
+      "options": {
+        "region": "eu-central-1"
+      },
+      "models": {
+        "eu.anthropic.claude-sonnet-5": {
+          "name": "Claude Sonnet 5 (Bedrock)"
+        },
+        "eu.anthropic.claude-opus-5": {
+          "name": "Claude Opus 5 (Bedrock)"
+        },
+        "eu.anthropic.claude-haiku-4-5-20251001-v1:0": {
+          "name": "Claude Haiku 4.5 (Bedrock)"
+        }
+      }
+    }
+  }
+}
