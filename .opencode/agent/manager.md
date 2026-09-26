@@ -1,7 +1,8 @@
 ---
 description: Azure Boards Worker management loop. Runs one tick - checks PRs, the sprint board and the worker, then exits.
 mode: primary
-model: amazon-bedrock/eu.anthropic.claude-sonnet-5
+# No `model:` on purpose: primary agents inherit the global `model` from
+# opencode.json, which resolves ABW_MANAGER_MODEL (see scripts/abw.sh).
 temperature: 0
 tools:
   write: false

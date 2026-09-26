@@ -6,7 +6,7 @@ The worker implements one item at a time. While a PR waits for review, the worke
 
 ## How it works
 
-Two [opencode](https://opencode.ai) agents run on AWS Bedrock models:
+Two [opencode](https://opencode.ai) agents run on either OpenAI or AWS Bedrock models, selected by `ABW_PROVIDER` in `.env`:
 
 | Agent | Role | Definition |
 |---|---|---|
@@ -44,7 +44,7 @@ The repository for an item comes from a `repo:<name>` tag. Failing that, the man
 1. **Prerequisites:** `opencode` (≥ 1.18), `az` with the `azure-devops` extension, `git`, `jq`, and Node 24.
 2. `npm install`
 3. `cp .env.example .env` and fill it in:
-   - **AWS:** `AWS_PROFILE` + `AWS_REGION` with Bedrock access. Never put access keys in the repo.
+   - **LLM provider:** `ABW_PROVIDER=openai` (default) needs `OPENAI_API_KEY`. `ABW_PROVIDER=bedrock` needs Bedrock access via `AWS_PROFILE` (or static keys, or `AWS_BEARER_TOKEN_BEDROCK`) plus `AWS_REGION`. Never put credentials in the repo.
    - **Azure DevOps:** `AZDO_ORG`, `AZDO_PROJECT`, `AZDO_TEAM` (for `@CurrentIteration`) and `ABW_IDENTITY`, the agent account's unique name. Authenticate as that account with `az login`, or set `AZURE_DEVOPS_EXT_PAT` (scopes: Work Items R/W, Code R/W).
    - Git must be able to clone and push the target repos as that identity, for example with Git Credential Manager or a PAT in the credential helper.
 4. Assign a work item in the current sprint to the agent account, optionally tagged `repo:<name>`.
@@ -68,4 +68,4 @@ OPENCODE_CONFIG_DIR=$PWD/.opencode opencode debug agent manager   # resolved too
 OPENCODE_CONFIG_DIR=$PWD/.opencode OPENCODE_DISABLE_EXTERNAL_SKILLS=1 opencode debug skill
 ```
 
-Model overrides: `ABW_MANAGER_MODEL`, `ABW_WORKER_MODEL`. The defaults are `eu.anthropic.claude-sonnet-5` for the manager and `eu.anthropic.claude-opus-5` for the worker, set in the agent files.
+Model overrides: `ABW_MANAGER_MODEL`, `ABW_WORKER_MODEL`, `ABW_SMALL_MODEL`. Unset, they default per `ABW_PROVIDER` — `openai/gpt-5.6-terra` + `openai/gpt-5.6-sol` for OpenAI, `eu.anthropic.claude-sonnet-5` + `eu.anthropic.claude-opus-5` for Bedrock. [scripts/abw.sh](scripts/abw.sh) resolves them and `.opencode/opencode.json` reads them via `{env:...}`; the agent files deliberately carry no `model:` of their own, so primary agents inherit the resolved global model.
