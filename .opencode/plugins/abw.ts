@@ -114,7 +114,7 @@ export default {
           const busy = busyItem(state)
           if (busy) throw new Error(`worker already busy with #${busy.id} (pid ${busy.workerPid})`)
 
-          const proc = launchWorker({
+          const proc = await launchWorker({
             id,
             worktree: item.worktree,
             prompt: PROMPTS[mode](id, instructions),

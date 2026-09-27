@@ -1,7 +1,7 @@
-import { mkdtemp, writeFile } from "node:fs/promises"
+import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { parseSessionId, readExitCode, tail } from "../src/lib/spawn.ts"
 
 describe("parseSessionId", () => {
@@ -27,5 +27,19 @@ describe("readExitCode / tail", () => {
     expect(readExitCode(join(dir, "x.exit"))).toBe(0)
     expect(readExitCode(join(dir, "missing.exit"))).toBeUndefined()
     expect(tail(join(dir, "x.jsonl"), 2)).toBe("b\nc")
+  })
+})
+
+describe("launchWorker", () => {
+  it("records the wrapper pid and exit code, and passes the prompt through verbatim", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "abw-"))
+    process.env.ABW_LOG_DIR = dir
+    vi.resetModules()
+    const { launchWorker, readExitCode } = await import("../src/lib/spawn.ts")
+    const prompt = `Address thread 31: "also add modulo" it's\nmultiline & <odd>`
+    const proc = await launchWorker({ id: 7, worktree: dir, prompt }, "echo")
+    expect(proc.pid).toBeGreaterThan(0)
+    await vi.waitFor(() => expect(readExitCode(proc.exitFile)).toBe(0), { timeout: 10_000 })
+    expect(await readFile(proc.logFile, "utf8")).toContain(prompt)
   })
 })
