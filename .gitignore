@@ -433,6 +433,9 @@ FodyWeavers.xsd
 state/
 logs/
 
+# opencode v2 writes its background-service state here
+.opencode/service.json
+
 # opencode installs @opencode-ai/plugin into the config dir on startup
 .opencode/node_modules/
 .opencode/package.json

@@ -22,7 +22,9 @@ export function launchWorker(w: WorkerLaunch): WorkerProcess {
   const stamp = Date.now()
   const logFile = join(LOG_DIR, `${w.id}-${stamp}.jsonl`)
   const exitFile = join(LOG_DIR, `${w.id}-${stamp}.exit`)
-  const args = ["run", "--agent", "worker", "--dir", w.worktree, "--format", "json", "--auto"]
+  // No --dir: opencode v2 removed it from `run`. The worktree is the spawned
+  // process's cwd (below), which is what v2 uses.
+  const args = ["run", "--agent", "worker", "--format", "json", "--auto"]
   if (w.sessionId) args.push("--session", w.sessionId)
   if (w.model) args.push("--model", w.model)
   args.push("--title", `ABW #${w.id}`, w.prompt)

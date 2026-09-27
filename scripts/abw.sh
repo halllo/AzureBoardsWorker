@@ -54,7 +54,9 @@ mkdir -p logs state
 echo "provider=$ABW_PROVIDER manager=$ABW_MANAGER_MODEL worker=$ABW_WORKER_MODEL" >> logs/manager.log
 while true; do
   echo "=== tick $(date -u +%FT%TZ) ===" >> logs/manager.log
-  opencode run --agent manager --dir "$ROOT" --auto --title "ABW tick $(date +%F_%H%M)" \
+  # No --dir: opencode v2 removed it from `run` (the cwd is used instead, and we
+  # already `cd "$ROOT"` above). Passing it makes v2 print help and do nothing.
+  opencode run --agent manager --auto --title "ABW tick $(date +%F_%H%M)" \
     --model "$ABW_MANAGER_MODEL" \
     "Run one tick." >> logs/manager.log 2>&1 \
     || echo "manager tick failed with exit $?" >> logs/manager.log

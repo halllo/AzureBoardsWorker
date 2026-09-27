@@ -64,8 +64,9 @@ Watch or resume a worker session interactively: `OPENCODE_CONFIG_DIR=$PWD/.openc
 ```bash
 npm test          # state + spawn unit tests
 npm run typecheck
-OPENCODE_CONFIG_DIR=$PWD/.opencode opencode debug agent manager   # resolved tools/permissions
-OPENCODE_CONFIG_DIR=$PWD/.opencode OPENCODE_DISABLE_EXTERNAL_SKILLS=1 opencode debug skill
+OPENCODE_CONFIG_DIR=$PWD/.opencode opencode debug agents   # resolved tools/permissions
+OPENCODE_CONFIG_DIR=$PWD/.opencode opencode debug config   # merged config sources
+OPENCODE_CONFIG_DIR=$PWD/.opencode opencode models         # every resolvable provider/model
 ```
 
 Model overrides: `ABW_MANAGER_MODEL`, `ABW_WORKER_MODEL`, `ABW_SMALL_MODEL`. Unset, they default per `ABW_PROVIDER` — `openai/gpt-5.6-terra` + `openai/gpt-5.6-sol` for OpenAI, `eu.anthropic.claude-sonnet-5` + `eu.anthropic.claude-opus-5` for Bedrock. [scripts/abw.sh](scripts/abw.sh) resolves them and `.opencode/opencode.json` reads them via `{env:...}`; the agent files deliberately carry no `model:` of their own, so primary agents inherit the resolved global model.
