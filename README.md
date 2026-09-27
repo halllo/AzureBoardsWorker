@@ -60,7 +60,7 @@ scripts/abw.sh --sleep 300  # run forever, checking every five minutes
 tail -f "$(ls -t logs/manager-*.log | head -1)"
 ```
 
-`--sleep <seconds>` overrides the manager-selected wake interval for this launcher process. It is useful for a fixed polling cadence; omit it to use the manager's stored interval, or the 3600-second fallback when none is stored.
+`--sleep <seconds>` overrides the manager-selected wake interval for this launcher process. It is useful for a fixed polling cadence; omit it to use the manager's stored interval, or the 3600-second fallback when none is stored. Press `Ctrl+C` to stop `npm start`; its supervisor terminates the launcher and any active manager process.
 
 Watch or resume a worker session interactively: `OPENCODE_CONFIG_DIR=$PWD/.opencode opencode --session <workerSessionId from state.json>`.
 

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "scripts/abw.sh --sleep 60",
+    "start": "node scripts/start.mjs --sleep 60",
     "tick": "scripts/abw.sh --once",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
