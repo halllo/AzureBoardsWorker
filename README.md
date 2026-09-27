@@ -21,7 +21,7 @@ Two [opencode](https://opencode.ai) agents run on either OpenAI or AWS Bedrock m
 - [azure-repos-pr](.opencode/skills/azure-repos-pr/SKILL.md): create/show PRs, list and reply to comment threads
 - [abw-workspace](.opencode/skills/abw-workspace/SKILL.md): pick the repo, mirror clone, per-item worktree, cleanup
 
-**Custom tools** ([.opencode/tool/](.opencode/tool/)) cover only what the CLI can't do well:
+**Custom tools** ([.opencode/plugins/abw.ts](.opencode/plugins/abw.ts), registered as an opencode v2 plugin) cover only what the CLI can't do well:
 
 - `state_get` / `state_update` / `state_setWake`: locked, atomic `state/state.json`, the manager's memory between ticks
 - `worker_start` / `worker_status`: spawn and inspect the single detached worker (PID, session id, exit code, log)

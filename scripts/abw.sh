@@ -56,9 +56,14 @@ while true; do
   echo "=== tick $(date -u +%FT%TZ) ===" >> logs/manager.log
   # No --dir: opencode v2 removed it from `run` (the cwd is used instead, and we
   # already `cd "$ROOT"` above). Passing it makes v2 print help and do nothing.
-  opencode run --agent manager --auto --title "ABW tick $(date +%F_%H%M)" \
+  # --standalone: without it `run` attaches to the shared background service,
+  #   which may have been started elsewhere and not know this project's agents
+  #   or plugin tools (symptom: `Agent not found: "manager"`).
+  # < /dev/null: opencode reads stdin when it is not a terminal and waits
+  #   forever on an open pipe (symptom: nothing after the `cli starting` log).
+  opencode run --standalone --agent manager --auto --title "ABW tick $(date +%F_%H%M)" \
     --model "$ABW_MANAGER_MODEL" \
-    "Run one tick." >> logs/manager.log 2>&1 \
+    "Run one tick." < /dev/null >> logs/manager.log 2>&1 \
     || echo "manager tick failed with exit $?" >> logs/manager.log
 
   [[ "${1:-}" == "--once" ]] && break

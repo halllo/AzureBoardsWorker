@@ -2,7 +2,7 @@
 description: Azure Boards Worker coding agent. Implements one work item in its git worktree, opens or updates the PR, and reports back.
 mode: primary
 # No `model:` on purpose: the worker is launched with an explicit --model
-# (ABW_WORKER_MODEL, see .opencode/tool/worker.ts), and otherwise inherits
+# (ABW_WORKER_MODEL, see .opencode/plugins/abw.ts), and otherwise inherits
 # the global `model` from opencode.json.
 tools:
   state_get: false

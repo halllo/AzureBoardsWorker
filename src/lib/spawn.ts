@@ -24,7 +24,10 @@ export function launchWorker(w: WorkerLaunch): WorkerProcess {
   const exitFile = join(LOG_DIR, `${w.id}-${stamp}.exit`)
   // No --dir: opencode v2 removed it from `run`. The worktree is the spawned
   // process's cwd (below), which is what v2 uses.
-  const args = ["run", "--agent", "worker", "--format", "json", "--auto"]
+  // --standalone is required: without it `run` attaches to the shared background
+  // service, which was started elsewhere and does not know this project's agents
+  // or plugin tools, so the worker dies with `Agent not found: "worker"`.
+  const args = ["run", "--standalone", "--agent", "worker", "--format", "json", "--auto"]
   if (w.sessionId) args.push("--session", w.sessionId)
   if (w.model) args.push("--model", w.model)
   args.push("--title", `ABW #${w.id}`, w.prompt)
