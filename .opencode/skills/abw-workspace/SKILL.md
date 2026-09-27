@@ -41,6 +41,8 @@ branch="abw/<id>-$slug"
 wt="$home/worktrees/<id>"
 test -d "$wt" || git -C "$mirror" worktree add -b "$branch" "$wt" "origin/$default"
 git -C "$wt" config push.autoSetupRemote true
+git -C "$wt" config user.name "${ABW_GIT_NAME:-Azure Boards Worker}"
+git -C "$wt" config user.email "$ABW_IDENTITY"
 ```
 If the worktree already exists (from a retried item), reuse it: `git -C "$wt" status` and `git -C "$wt" rev-parse --abbrev-ref HEAD`.
 

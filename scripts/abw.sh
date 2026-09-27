@@ -44,6 +44,11 @@ case "$ABW_PROVIDER" in
 esac
 
 export ABW_HOME="${ABW_HOME:-$HOME/.abw}"
+# The Azure DevOps extension prefers a valid `az login` account over its token
+# environment variable. Keep this worker's Azure CLI state separate so it uses
+# the refreshed Entra agent token instead of the developer's cached identity.
+export AZURE_CONFIG_DIR="$ABW_HOME/azure-cli"
+export AZURE_EXTENSION_DIR="${AZURE_EXTENSION_DIR:-$HOME/.azure/cliextensions}"
 export OPENCODE_CONFIG_DIR="$ROOT/.opencode"
 export OPENCODE_DISABLE_AUTOUPDATE=1
 export OPENCODE_DISABLE_EXTERNAL_SKILLS=1   # only the skills in .opencode/skills
@@ -77,16 +82,21 @@ refresh_devops_token() {
   fi
   [[ -n "$token" ]] || { echo "Entra token helper returned an empty token" >&2; return 1; }
   export AZURE_DEVOPS_EXT_PAT="$token"
+  export GIT_CONFIG_COUNT=1
+  export GIT_CONFIG_KEY_0="http.https://dev.azure.com/.extraheader"
+  export GIT_CONFIG_VALUE_0="Authorization: Bearer $token"
 }
 
 refresh_devops_token || exit 1
 az devops configure --defaults organization="$AZDO_ORG" project="$AZDO_PROJECT" >/dev/null
 
 mkdir -p logs state
-echo "provider=$ABW_PROVIDER manager=$ABW_MANAGER_MODEL worker=$ABW_WORKER_MODEL" >> logs/manager.log
 while true; do
-  echo "=== tick $(date -u +%FT%TZ) ===" >> logs/manager.log
-  refresh_devops_token || { echo "token refresh failed; manager tick skipped" >> logs/manager.log; [[ "${1:-}" == "--once" ]] && break; sleep 60; continue; }
+  tick_started_at="$(date -u +%Y%m%dT%H%M%SZ)"
+  manager_log="logs/manager-${tick_started_at}-$$.log"
+  echo "provider=$ABW_PROVIDER manager=$ABW_MANAGER_MODEL worker=$ABW_WORKER_MODEL" > "$manager_log"
+  echo "=== tick $(date -u +%FT%TZ) ===" >> "$manager_log"
+  refresh_devops_token || { echo "token refresh failed; manager tick skipped" >> "$manager_log"; [[ "${1:-}" == "--once" ]] && break; sleep 60; continue; }
   # No --dir: opencode v2 removed it from `run` (the cwd is used instead, and we
   # already `cd "$ROOT"` above). Passing it makes v2 print help and do nothing.
   # --standalone: without it `run` attaches to the shared background service,
@@ -96,11 +106,11 @@ while true; do
   #   forever on an open pipe (symptom: nothing after the `cli starting` log).
   opencode run --standalone --agent manager --auto --title "ABW tick $(date +%F_%H%M)" \
     --model "$ABW_MANAGER_MODEL" \
-    "Run one tick." < /dev/null >> logs/manager.log 2>&1 \
-    || echo "manager tick failed with exit $?" >> logs/manager.log
+    "Run one tick." < /dev/null >> "$manager_log" 2>&1 \
+    || echo "manager tick failed with exit $?" >> "$manager_log"
 
   [[ "${1:-}" == "--once" ]] && break
   wake=$(jq -r '.nextWakeSeconds // 3600' state/state.json 2>/dev/null || echo 3600)
-  echo "sleeping ${wake}s" >> logs/manager.log
+  echo "sleeping ${wake}s" >> "$manager_log"
   sleep "$wake"
 done

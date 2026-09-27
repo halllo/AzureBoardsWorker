@@ -1,22 +1,22 @@
 ---
 name: azure-boards
-description: Query and update Azure DevOps work items with the az boards CLI (bash). Sprint queries for @Me, reading fields, state changes, discussion comments.
+description: Query and update Azure DevOps work items with the az boards CLI (bash). Sprint queries for the configured worker, reading fields, state changes, discussion comments.
 ---
 
 # Azure Boards via `az boards`
 
 Defaults (`organization`, `project`) come from `az devops configure --defaults` or the `$AZDO_ORG` / `$AZDO_PROJECT` env vars. Pass `--org "$AZDO_ORG" --project "$AZDO_PROJECT"` explicitly if the defaults are not set. Always quote project names that contain spaces.
 
-## Current sprint items assigned to me
+## Current sprint items assigned to the worker
 
-`@CurrentIteration` needs the team: `@CurrentIteration('[Project]\Team')`.
+`@CurrentIteration` needs the team: `@CurrentIteration('[Project]\Team')`. Use `$ABW_IDENTITY` rather than `@Me`: when the worker uses an Entra delegated token, Azure DevOps can resolve `@Me` to a different identity.
 
 ```bash
 az boards query -o json --wiql "
 SELECT [System.Id], [System.Title], [System.State], [System.WorkItemType],
        [Microsoft.VSTS.Common.Priority], [System.Tags], [System.ChangedDate]
 FROM WorkItems
-WHERE [System.AssignedTo] = @Me
+WHERE [System.AssignedTo] = '$ABW_IDENTITY'
   AND [System.IterationPath] = @CurrentIteration('[$AZDO_PROJECT]\\$AZDO_TEAM')
   AND [System.State] NOT IN ('Done', 'Closed', 'Removed', 'Resolved')
 ORDER BY [Microsoft.VSTS.Common.Priority] ASC, [System.Id] ASC" \
@@ -58,4 +58,4 @@ Valid states depend on the process template (Scrum: `New/Approved/Committed/Done
 Comment only: `az boards work-item update --id <id> --discussion "<text>"`. `--discussion` accepts HTML.
 
 ## Identity
-The agent's own identity (unique name / email) is in `$ABW_IDENTITY`. It is the identity `@Me` resolves to, and it authors the agent's comments.
+The agent's own identity (unique name / email) is in `$ABW_IDENTITY`. Use it to query assignments; it authors the agent's comments.

@@ -34,8 +34,8 @@ Item lifecycle: `queued → implementing → pr_open ⇄ addressing_feedback →
 ~/.abw/repos/<repo>.git      bare mirror per repository (cloned on first use)
 ~/.abw/worktrees/<id>        one worktree per work item, branch abw/<id>-<slug>
 state/state.json             tracked items (gitignored)
-logs/manager.log             manager ticks
-logs/<id>-<ts>.jsonl         worker event streams
+logs/manager-<ts>-<pid>.log  one manager tick per log
+logs/worker-<ts>-<id>.jsonl  worker event streams
 ```
 The repository for an item comes from a `repo:<name>` tag. Failing that, the manager uses a linked PR, or infers it from the item text. If the repo is still ambiguous, the manager asks on the work item instead of guessing.
 
@@ -46,7 +46,7 @@ The repository for an item comes from a `repo:<name>` tag. Failing that, the man
 3. `cp .env.example .env` and fill it in:
    - **LLM provider:** `ABW_PROVIDER=openai` (default) needs `OPENAI_API_KEY`. `ABW_PROVIDER=bedrock` needs Bedrock access via `AWS_PROFILE` (or static keys, or `AWS_BEARER_TOKEN_BEDROCK`) plus `AWS_REGION`. Never put credentials in the repo.
    - **Azure DevOps:** `AZDO_ORG`, `AZDO_PROJECT`, `AZDO_TEAM` (for `@CurrentIteration`) and `ABW_IDENTITY`, the agent account's unique name. Authenticate as that account with `az login`, or set `AZURE_DEVOPS_EXT_PAT` (scopes: Work Items R/W, Code R/W).
-   - **Entra agent identity (optional):** set `ABW_AUTH=entra-agent`, `ENTRA_AGENT_IDENTITY`, `ENTRA_AGENT_USER_ID`, `ENTRA_TENANT_ID`, `ENTRA_AGENT_BLUEPRINT_ID`, and `ENTRA_AGENT_BLUEPRINT_SECRET`. The launcher exchanges the identity for an Azure DevOps token before each manager tick and exports it as `AZURE_DEVOPS_EXT_PAT` to the manager and any worker it starts. The confidential client must have the Azure DevOps delegated `user_impersonation` grant for the agent user. Keep `ENTRA_AGENT_BLUEPRINT_SECRET` in a local secret store or ignored `.env` file.
+   - **Entra agent identity (optional):** set `ABW_AUTH=entra-agent`, `ENTRA_AGENT_IDENTITY`, `ENTRA_AGENT_USER_ID`, `ENTRA_TENANT_ID`, `ENTRA_AGENT_BLUEPRINT_ID`, and `ENTRA_AGENT_BLUEPRINT_SECRET`. The launcher exchanges the identity for an Azure DevOps token before each manager tick, exports it as `AZURE_DEVOPS_EXT_PAT` to the manager and any worker it starts, and uses a worker-specific Azure CLI configuration directory so a developer's cached `az login` identity cannot override it. The confidential client must have the Azure DevOps delegated `user_impersonation` grant for the agent user. Keep `ENTRA_AGENT_BLUEPRINT_SECRET` in a local secret store or ignored `.env` file.
    - Git must be able to clone and push the target repos as that identity, for example with Git Credential Manager or a PAT in the credential helper.
 4. Assign a work item in the current sprint to the agent account, optionally tagged `repo:<name>`.
 
@@ -55,7 +55,7 @@ The repository for an item comes from a `repo:<name>` tag. Failing that, the man
 ```bash
 npm run tick    # one manager tick, then exit
 npm start       # run forever
-tail -f logs/manager.log
+tail -f "$(ls -t logs/manager-*.log | head -1)"
 ```
 
 Watch or resume a worker session interactively: `OPENCODE_CONFIG_DIR=$PWD/.opencode opencode --session <workerSessionId from state.json>`.

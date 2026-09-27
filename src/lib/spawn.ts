@@ -20,8 +20,8 @@ export type WorkerProcess = { pid: number; logFile: string; exitFile: string }
 export function launchWorker(w: WorkerLaunch): WorkerProcess {
   mkdirSync(LOG_DIR, { recursive: true })
   const stamp = Date.now()
-  const logFile = join(LOG_DIR, `${w.id}-${stamp}.jsonl`)
-  const exitFile = join(LOG_DIR, `${w.id}-${stamp}.exit`)
+  const logFile = join(LOG_DIR, `worker-${stamp}-${w.id}.jsonl`)
+  const exitFile = join(LOG_DIR, `worker-${stamp}-${w.id}.exit`)
   // No --dir: opencode v2 removed it from `run`. The worktree is the spawned
   // process's cwd (below), which is what v2 uses.
   // --standalone is required: without it `run` attaches to the shared background
