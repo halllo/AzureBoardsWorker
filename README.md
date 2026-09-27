@@ -54,9 +54,13 @@ The repository for an item comes from a `repo:<name>` tag. Failing that, the man
 
 ```bash
 npm run tick    # one manager tick, then exit
-npm start       # run forever
+npm start       # run forever, checking every minute
+scripts/abw.sh  # run forever using the manager-selected interval (3600-second fallback)
+scripts/abw.sh --sleep 300  # run forever, checking every five minutes
 tail -f "$(ls -t logs/manager-*.log | head -1)"
 ```
+
+`--sleep <seconds>` overrides the manager-selected wake interval for this launcher process. It is useful for a fixed polling cadence; omit it to use the manager's stored interval, or the 3600-second fallback when none is stored.
 
 Watch or resume a worker session interactively: `OPENCODE_CONFIG_DIR=$PWD/.opencode opencode --session <workerSessionId from state.json>`.
 

@@ -1,8 +1,31 @@
 #!/usr/bin/env bash
 # Outer loop of the Azure Boards Worker: run one manager tick, sleep as the manager asked, repeat.
-# Usage: scripts/abw.sh          run forever
-#        scripts/abw.sh --once   run a single tick (for testing)
+# Usage: scripts/abw.sh                    run forever (manager-selected sleep; 3600-second fallback)
+#        scripts/abw.sh --once             run a single tick (for testing)
+#        scripts/abw.sh --sleep <seconds>  override the manager's wake interval
 set -uo pipefail
+
+sleep_override=""
+once=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --once)
+      once=true
+      ;;
+    --sleep)
+      [[ $# -ge 2 ]] || { echo "--sleep requires a duration in seconds" >&2; exit 2; }
+      sleep_override="$2"
+      shift
+      ;;
+    *)
+      echo "usage: scripts/abw.sh [--once] [--sleep <seconds>]" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+[[ -z "$sleep_override" || "$sleep_override" =~ ^[0-9]+$ ]] || { echo "--sleep must be a non-negative whole number of seconds" >&2; exit 2; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -96,7 +119,7 @@ while true; do
   manager_log="logs/manager-${tick_started_at}-$$.log"
   echo "provider=$ABW_PROVIDER manager=$ABW_MANAGER_MODEL worker=$ABW_WORKER_MODEL" > "$manager_log"
   echo "=== tick $(date -u +%FT%TZ) ===" >> "$manager_log"
-  refresh_devops_token || { echo "token refresh failed; manager tick skipped" >> "$manager_log"; [[ "${1:-}" == "--once" ]] && break; sleep 60; continue; }
+  refresh_devops_token || { echo "token refresh failed; manager tick skipped" >> "$manager_log"; $once && break; sleep 60; continue; }
   # No --dir: opencode v2 removed it from `run` (the cwd is used instead, and we
   # already `cd "$ROOT"` above). Passing it makes v2 print help and do nothing.
   # --standalone: without it `run` attaches to the shared background service,
@@ -109,8 +132,8 @@ while true; do
     "Run one tick." < /dev/null >> "$manager_log" 2>&1 \
     || echo "manager tick failed with exit $?" >> "$manager_log"
 
-  [[ "${1:-}" == "--once" ]] && break
-  wake=$(jq -r '.nextWakeSeconds // 3600' state/state.json 2>/dev/null || echo 3600)
+  $once && break
+  wake="${sleep_override:-$(jq -r '.nextWakeSeconds // 3600' state/state.json 2>/dev/null || echo 3600)}"
   echo "sleeping ${wake}s" >> "$manager_log"
   sleep "$wake"
 done
