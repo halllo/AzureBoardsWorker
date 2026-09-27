@@ -48,12 +48,45 @@ export OPENCODE_CONFIG_DIR="$ROOT/.opencode"
 export OPENCODE_DISABLE_AUTOUPDATE=1
 export OPENCODE_DISABLE_EXTERNAL_SKILLS=1   # only the skills in .opencode/skills
 
+refresh_devops_token() {
+  [[ "${ABW_AUTH:-pat}" == "entra-agent" ]] || return
+  : "${ENTRA_TENANT_ID:?ABW_AUTH=entra-agent needs ENTRA_TENANT_ID in .env}"
+  : "${ENTRA_AGENT_IDENTITY:?ABW_AUTH=entra-agent needs ENTRA_AGENT_IDENTITY in .env}"
+  : "${ENTRA_AGENT_USER_ID:?ABW_AUTH=entra-agent needs ENTRA_AGENT_USER_ID in .env}"
+  : "${ENTRA_AGENT_BLUEPRINT_ID:?ABW_AUTH=entra-agent needs ENTRA_AGENT_BLUEPRINT_ID in .env}"
+  : "${ENTRA_AGENT_BLUEPRINT_SECRET:?ABW_AUTH=entra-agent needs ENTRA_AGENT_BLUEPRINT_SECRET in .env}"
+
+  local dotnet_command
+  if command -v dotnet >/dev/null 2>&1; then
+    dotnet_command="$(command -v dotnet)"
+  elif command -v dotnet.exe >/dev/null 2>&1; then
+    dotnet_command="$(command -v dotnet.exe)"
+  elif [[ -x "/mnt/c/Program Files/dotnet/dotnet.exe" ]]; then
+    dotnet_command="/mnt/c/Program Files/dotnet/dotnet.exe"
+  elif [[ -x "/c/Program Files/dotnet/dotnet.exe" ]]; then
+    dotnet_command="/c/Program Files/dotnet/dotnet.exe"
+  else
+    echo "dotnet SDK not found; install .NET 10 or add dotnet to PATH" >&2
+    return 1
+  fi
+
+  local token
+  if ! token="$("$dotnet_command" run --verbosity quiet "$ROOT/scripts/entra-token.cs" --no-launch-profile)"; then
+    echo "failed to acquire Azure DevOps token for the Entra agent identity" >&2
+    return 1
+  fi
+  [[ -n "$token" ]] || { echo "Entra token helper returned an empty token" >&2; return 1; }
+  export AZURE_DEVOPS_EXT_PAT="$token"
+}
+
+refresh_devops_token || exit 1
 az devops configure --defaults organization="$AZDO_ORG" project="$AZDO_PROJECT" >/dev/null
 
 mkdir -p logs state
 echo "provider=$ABW_PROVIDER manager=$ABW_MANAGER_MODEL worker=$ABW_WORKER_MODEL" >> logs/manager.log
 while true; do
   echo "=== tick $(date -u +%FT%TZ) ===" >> logs/manager.log
+  refresh_devops_token || { echo "token refresh failed; manager tick skipped" >> logs/manager.log; [[ "${1:-}" == "--once" ]] && break; sleep 60; continue; }
   # No --dir: opencode v2 removed it from `run` (the cwd is used instead, and we
   # already `cd "$ROOT"` above). Passing it makes v2 print help and do nothing.
   # --standalone: without it `run` attaches to the shared background service,
